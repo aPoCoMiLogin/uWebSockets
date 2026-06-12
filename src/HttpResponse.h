@@ -532,6 +532,7 @@ public:
     HttpResponse *cork(MoveOnlyFunction<void()> &&handler) {
         if (!Super::isCorked() && Super::canCork()) {
             LoopData *loopData = Super::getLoopData();
+            auto *initialContext = us_socket_context(SSL, (struct us_socket_t *) this);
             Super::cork();
             handler();
 
@@ -552,7 +553,7 @@ public:
 
             /* If we are no longer an HTTP socket then early return the new "this".
              * We don't want to even overwrite timeout as it is set in upgrade already. */
-            if (this != newCorkedSocket) {
+            if (this != newCorkedSocket || us_socket_context(SSL, (struct us_socket_t *) newCorkedSocket) != initialContext) {
                 return static_cast<HttpResponse *>(newCorkedSocket);
             }
 
